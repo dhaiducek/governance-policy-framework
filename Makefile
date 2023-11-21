@@ -78,6 +78,11 @@ clean::
 	-rm -r test/resources/policy_generator/helm-kustomization/base/charts/
 	find . -type d \( -name "stolostron" -o -name "open-cluster-management-io" \) -exec rm -rf {} +
 
+.PHONY: clean-repos
+clean-repos:
+	-find . -type d -name stolostron -exec rm -rf {} +
+	-find . -type d -name open-cluster-management-io -exec rm -rf {} +
+
 ############################################################
 # lint section
 ############################################################

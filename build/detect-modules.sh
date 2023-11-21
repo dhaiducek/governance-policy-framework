@@ -17,7 +17,10 @@ echo "Go module query: '${MODULE_QUERY}'"
 REPOS=$(cat ${DIR}/main-branch-sync/repo.txt)
 # Manually append deprecated repos
 # REPOS="${REPOS}"
-SUMMARY="Modules matching '${MODULE_QUERY}':"
+SUMMARY="
+REPOSITORY | PACKAGE
+---------- | -------"
+
 FOUND="false"
 GO_LIST_TMPL='
 {{- define "M" }}{{ .Path }}@{{ .Version }}{{ end -}}
@@ -41,16 +44,15 @@ for REPO in ${REPOS}; do
       { echo "${REPO} ${RELEASE}: branch could not be checked out"; continue; }
     OUTPUT=""
     go mod download &>/dev/null
-    MAIN_MODULES="$(go list -deps -f "${GO_LIST_TMPL}" all | sort -u)"
+    MAIN_MODULES="$(go list -deps -f "${GO_LIST_TMPL}" ./... | sort -u)"
     OUTPUT="$(echo "${MAIN_MODULES}" | grep -i "${MODULE_QUERY}")"
     if [[ -n "${OUTPUT}" ]]; then
-      echo "${OUTPUT}"
-      echo "^^^ Found in ${REPO} ${RELEASE}"
+      echo "- Modules found in ${REPO}@${RELEASE}"
       FOUND="true"
-      OUTPUT="$(echo "${OUTPUT}" | sed 's/^/  /')"
-      SUMMARY="${SUMMARY}\n${REPO} ${RELEASE}:\n${OUTPUT}"
+      OUTPUT="$(echo "${OUTPUT}" | sed 's/^/ | /')"
+      SUMMARY="${SUMMARY}\n${REPO}@${RELEASE}${OUTPUT}\n | "
     else
-      echo "=== ${REPO} ${RELEASE}: '${MODULE_QUERY}' not found"
+      echo "- ${REPO}@${RELEASE}: '${MODULE_QUERY}' not found"
     fi
   done
   cd ${DIR}
@@ -60,4 +62,7 @@ if [[ "${FOUND}" == "false" ]]; then
   SUMMARY="${SUMMARY}\n  Module not found."
 fi
 
-echo -e "\n${SUMMARY}"
+echo "
+* Modules matching '${MODULE_QUERY}':
+"
+echo -e "\n${SUMMARY}" | column -t -s "|"
